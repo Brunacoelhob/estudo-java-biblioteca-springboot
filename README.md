@@ -82,31 +82,4 @@ O sistema conta com **interface intuitiva no frontend** e persistência de dados
 
 ---
 
-## 🗃️ Banco de Dados
-
-O projeto utiliza o **MySQL** para armazenamento dos dados.  
-A conexão está configurada no arquivo `application.properties`.
-
-Você pode utilizar o H2 para testes locais mudando o datasource.
-
-> 📌 Se necessário, adicione um script `.sql` com o schema do banco na pasta `/scripts`.
-
----
-
-## 🧪 Como testar
-
-1. **Clone o projeto**:
-```bash
-git clone https://github.com/Brunacoelhob/biblioteca-poo-springboot.git
-Execute o backend com Spring Boot no IntelliJ IDEA
-
-Abra o arquivo index.html da pasta frontend no navegador
-
-Teste as funcionalidades: cadastro, exclusão, edição etc.
-
-## 🖼️ Demonstração da Interface
-
-Veja abaixo uma prévia da aplicação funcionando:
-
-![Interface da aplicação](./frontend/img/diagrama.png)
 
