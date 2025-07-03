@@ -1,0 +1,32 @@
+### ✅ Criar um novo livro
+POST http://localhost:8080/livros
+Content-Type: application/json
+
+{
+  "titulo": "O Senhor dos Anéis",
+  "autor": "J.R.R. Tolkien",
+  "anoPublicacao": 1954,
+  "editora": "HarperCollins",
+  "disponivel": true
+}
+
+### Listar todos os livros
+GET http://localhost:8080/livros
+
+### Buscar livro por ID
+GET http://localhost:8080/livros/1
+
+### Atualizar livro existente
+PUT http://localhost:8080/livros/1
+Content-Type: application/json
+
+{
+  "titulo": "O Hobbit",
+  "autor": "J.R.R. Tolkien",
+  "anoPublicacao": 1937,
+  "editora": "HarperCollins",
+  "disponivel": false
+}
+
+### Deletar livro por ID
+DELETE http://localhost:8080/livros/1
