@@ -1,0 +1,259 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 20px;
+}
+
+/* Container principal */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow-x: hidden;
+}
+
+/* Cabeçalho */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.header h1 {
+    font-size: 2.5em;
+    color: #2c3e50;
+    text-transform: uppercase;
+}
+
+/* Seção do formulário */
+.form-section {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-title {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #34495e;
+}
+
+.form-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.form-group {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Centralizar botão */
+.button-group-center {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Botão base */
+.btn {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Botão adicionar */
+.btn-adicionar {
+    background-color: #2ecc71;
+}
+
+.btn-adicionar:hover {
+    background-color: #27ae60;
+    transform: scale(1.03);
+}
+
+.btn-adicionar:active {
+    background-color: #219653;
+    transform: scale(0.98);
+}
+
+/* Agrupamento horizontal dos botões */
+.btn-group-linha {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+/* Botões de ação */
+.btn-editar {
+    background-color: #f1c40f;
+}
+
+.btn-editar:hover {
+    background-color: #d4ac0d;
+    transform: scale(1.03);
+}
+
+.btn-excluir {
+    background-color: #e74c3c;
+}
+
+.btn-excluir:hover {
+    background-color: #c0392b;
+    transform: scale(1.03);
+}
+
+.btn-salvar {
+    background-color: #3498db;
+}
+
+.btn-salvar:hover {
+    background-color: #2980b9;
+    transform: scale(1.03);
+}
+
+.btn-cancelar {
+    background-color: #7f8c8d;
+}
+
+.btn-cancelar:hover {
+    background-color: #616a6b;
+    transform: scale(1.03);
+}
+
+.btn-editar:active,
+.btn-excluir:active,
+.btn-salvar:active,
+.btn-cancelar:active {
+    transform: scale(0.97);
+}
+
+/* Seção da tabela */
+.tabela-section {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tabela-title {
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    color: #34495e;
+}
+
+.tabela-container {
+    overflow-x: auto;
+    max-width: 100%;
+    overflow-y: hidden;
+}
+
+.tabela {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.tabela th,
+.tabela td {
+    padding: 10px 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+/* Cabeçalho */
+.tabela th {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Reduz espaço da coluna "Ano" */
+.tabela th:nth-child(5),
+.tabela td:nth-child(5) {
+    width: 80px;
+}
+
+/* Reduz espaço da coluna "Ações" */
+.tabela td.acoes-cell {
+    width: 130px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Alternância de cor nas linhas */
+.tabela tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.tabela tr:hover {
+    background-color: #e0f7fa;
+}
+
+.capa-livro {
+    width: 50px;
+    height: auto;
+    border-radius: 4px;
+    object-fit: cover;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    margin-left: 15px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .form-container {
+        flex-direction: column;
+    }
+
+    .button-group-center {
+        justify-content: center;
+    }
+
+    .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .btn-group-linha {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tabela td.acoes-cell {
+        width: auto;
+        flex-direction: column;
+    }
+}
