@@ -1,0 +1,44 @@
+# Stack completa: MySQL + API (Spring Boot) + front-end estático (nginx).
+#   cp .env.example .env     # defina DB_PASSWORD
+#   docker compose up -d --build --wait
+#   Front-end: http://localhost:8081   API: http://localhost:8080/swagger-ui.html
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      MYSQL_DATABASE: biblioteca_digital
+    volumes:
+      - dados:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Sem "ports": o banco não é acessível de fora do Docker.
+
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://db:3306/biblioteca_digital?serverTimezone=UTC
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '127.0.0.1:8080:8080'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - '127.0.0.1:8081:80'
+
+volumes:
+  dados:

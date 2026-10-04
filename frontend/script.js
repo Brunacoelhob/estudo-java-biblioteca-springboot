@@ -1,4 +1,5 @@
-const apiURL = 'http://localhost:8080/livros';
+// URL da API: pode ser trocada definindo window.API_URL antes deste script (ex.: em config.js).
+const apiURL = (window.API_URL || 'http://localhost:8080') + '/livros';
 
 const tituloInput = document.getElementById('titulo');
 const autorInput = document.getElementById('autor');
@@ -7,156 +8,155 @@ const editoraInput = document.getElementById('editora');
 const imagemUrlInput = document.getElementById('imagemUrl');
 const tabelaCorpo = document.querySelector('#tabela-livros tbody');
 
-function carregarLivros() {
-    fetch(apiURL)
-        .then(res => res.json())
-        .then(livros => {
-            tabelaCorpo.innerHTML = '';
-            livros.forEach(livro => {
-                const linha = document.createElement('tr');
-                linha.innerHTML = `
-                    <td>${livro.id}</td>
-                    <td>
-                        <img 
-                            src="${livro.imagemUrl && livro.imagemUrl.trim() !== '' ? livro.imagemUrl : 'https://via.placeholder.com/50'}" 
-                            class="capa-livro" 
-                            alt="Capa do livro"
-                        >
-                    </td>
-                    <td>${livro.titulo}</td>
-                    <td>${livro.autor}</td>
-                    <td>${livro.anoPublicacao ?? '-'}</td>
-                    <td>${livro.editora ?? '-'}</td>
-                    <td>${livro.disponivel ? 'Sim' : 'Não'}</td>
-                    <td class="acoes-cell">
-                        <div class="btn-group-linha">
-                            <button class="btn btn-editar" onclick="editarInline(this, ${livro.id})">Editar</button>
-                            <button class="btn btn-excluir" onclick="deletarLivro(${livro.id})">Excluir</button>
-                        </div>
-                    </td>
-                `;
-                tabelaCorpo.appendChild(linha);
-            });
-        })
-        .catch(erro => console.error('Erro ao carregar livros:', erro));
+// Capa padrão embutida (sem depender de serviço externo).
+const CAPA_PADRAO =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="50" height="70"><rect width="50" height="70" fill="#d9d9d9"/>' +
+        '<text x="25" y="40" font-size="10" text-anchor="middle" fill="#666">sem capa</text></svg>'
+    );
+
+// SEGURANÇA: todo texto vindo da API é inserido com textContent/atributos do DOM,
+// nunca com innerHTML. Assim um título como "<img onerror=...>" aparece como texto e não executa.
+function el(tag, props = {}, ...filhos) {
+    const e = document.createElement(tag);
+    Object.entries(props).forEach(([k, v]) => {
+        if (k === 'class') e.className = v;
+        else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+        else e[k] = v;
+    });
+    filhos.forEach(f => e.append(f));
+    return e;
 }
 
+// Só http(s) vira src de imagem; qualquer outra coisa usa a capa padrão.
+function urlSegura(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : CAPA_PADRAO;
+}
 
-function adicionarLivro() {
+async function requisitar(url, opcoes) {
+    const res = await fetch(url, opcoes);
+    if (!res.ok) {
+        let detalhe = 'Erro inesperado';
+        try {
+            const problema = await res.json();
+            const campos = problema.campos ? Object.values(problema.campos).join('; ') : '';
+            detalhe = campos || problema.detail || detalhe;
+        } catch (_) { /* resposta sem corpo JSON */ }
+        throw new Error(detalhe);
+    }
+    return res.status === 204 ? null : res.json();
+}
+
+function linhaDoLivro(livro) {
+    const capa = el('img', { src: urlSegura(livro.imagemUrl), className: 'capa-livro', alt: 'Capa do livro' });
+    const acoes = el('div', { class: 'btn-group-linha' },
+        el('button', { class: 'btn btn-editar', textContent: 'Editar', onclick: () => editarInline(livro) }),
+        el('button', { class: 'btn btn-excluir', textContent: 'Excluir', onclick: () => deletarLivro(livro.id) })
+    );
+    return el('tr', {},
+        el('td', { textContent: livro.id }),
+        el('td', {}, capa),
+        el('td', { textContent: livro.titulo }),
+        el('td', { textContent: livro.autor }),
+        el('td', { textContent: livro.anoPublicacao ?? '-' }),
+        el('td', { textContent: livro.editora ?? '-' }),
+        el('td', { textContent: livro.disponivel ? 'Sim' : 'Não' }),
+        el('td', { class: 'acoes-cell' }, acoes)
+    );
+}
+
+async function carregarLivros() {
+    try {
+        const livros = await requisitar(apiURL);
+        tabelaCorpo.replaceChildren(...livros.map(linhaDoLivro));
+    } catch (erro) {
+        console.error('Erro ao carregar livros:', erro);
+        tabelaCorpo.replaceChildren(
+            el('tr', {}, el('td', { colSpan: 8, textContent: 'Não foi possível carregar os livros. A API está no ar?' }))
+        );
+    }
+}
+
+async function adicionarLivro() {
     const livro = {
         titulo: tituloInput.value,
         autor: autorInput.value,
-        anoPublicacao: parseInt(anoInput.value),
+        anoPublicacao: anoInput.value ? parseInt(anoInput.value, 10) : null,
         editora: editoraInput.value,
         imagemUrl: imagemUrlInput.value,
         disponivel: true
     };
-
-    fetch(apiURL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(livro)
-    })
-        .then(res => {
-            if (res.ok) {
-                limparFormulario();
-                carregarLivros();
-            } else {
-                alert('Erro ao adicionar livro');
-            }
+    try {
+        await requisitar(apiURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(livro)
         });
+        limparFormulario();
+        carregarLivros();
+    } catch (erro) {
+        alert('Erro ao adicionar livro: ' + erro.message);
+    }
 }
 
-function editarInline(botaoEditar, id) {
-    const linha = botaoEditar.closest('tr');
-    const dados = linha.querySelectorAll('td');
+function editarInline(livro) {
+    const campo = (tipo, valor) => el('input', { type: tipo, value: valor ?? '', className: 'input' });
+    const imagem = campo('text', livro.imagemUrl);
+    const titulo = campo('text', livro.titulo);
+    const autor = campo('text', livro.autor);
+    const ano = campo('number', livro.anoPublicacao);
+    const editora = campo('text', livro.editora);
+    const disponivel = el('select', { className: 'input' },
+        el('option', { value: 'true', textContent: 'Sim', selected: livro.disponivel }),
+        el('option', { value: 'false', textContent: 'Não', selected: !livro.disponivel })
+    );
 
-    const imagemSrc = dados[1].querySelector('img').src;
-    const titulo = dados[2].textContent;
-    const autor = dados[3].textContent;
-    const ano = dados[4].textContent;
-    const editora = dados[5].textContent;
-    const disponivel = dados[6].textContent.trim() === 'Sim';
-
-    linha.innerHTML = `
-        <td>${id}</td>
-        <td><input type="text" value="${imagemSrc}" class="input"></td>
-        <td><input type="text" value="${titulo}" class="input"></td>
-        <td><input type="text" value="${autor}" class="input"></td>
-        <td><input type="number" value="${ano}" class="input"></td>
-        <td><input type="text" value="${editora}" class="input"></td>
-        <td>
-            <select class="input">
-                <option value="true" ${disponivel ? 'selected' : ''}>Sim</option>
-                <option value="false" ${!disponivel ? 'selected' : ''}>Não</option>
-            </select>
-        </td>
-        <td class="acoes-cell">
-            <div class="btn-group-linha">
-                <button class="btn btn-salvar" onclick="salvarEdicao(${id}, this)">Salvar</button>
-                <button class="btn btn-excluir" onclick="carregarLivros()">Cancelar</button>
-            </div>
-        </td>
-    `;
-}
-
-function salvarEdicao(id, botaoSalvar) {
-    const linha = botaoSalvar.closest('tr');
-    const inputs = linha.querySelectorAll('input');
-    const select = linha.querySelector('select');
-
-    const livroAtualizado = {
-        imagemUrl: inputs[0].value,
-        titulo: inputs[1].value,
-        autor: inputs[2].value,
-        anoPublicacao: parseInt(inputs[3].value),
-        editora: inputs[4].value,
-        disponivel: select.value === 'true'
+    const salvar = async () => {
+        try {
+            await requisitar(`${apiURL}/${livro.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imagemUrl: imagem.value,
+                    titulo: titulo.value,
+                    autor: autor.value,
+                    anoPublicacao: ano.value ? parseInt(ano.value, 10) : null,
+                    editora: editora.value,
+                    disponivel: disponivel.value === 'true'
+                })
+            });
+            carregarLivros();
+        } catch (erro) {
+            alert('Erro ao salvar alterações: ' + erro.message);
+        }
     };
 
-    const apiUrl = `http://localhost:8080/livros/${id}`;
-
-    fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(livroAtualizado)
-    })
-    .then(res => {
-        if (res.ok) {
-            carregarLivros();
-        } else {
-            alert('Erro ao salvar alterações');
-        }
-    })
-    .catch(erro => {
-        console.error('Erro na requisição:', erro);
-        alert('Erro na comunicação com o servidor');
-    });
+    const linha = el('tr', {},
+        el('td', { textContent: livro.id }),
+        el('td', {}, imagem), el('td', {}, titulo), el('td', {}, autor),
+        el('td', {}, ano), el('td', {}, editora), el('td', {}, disponivel),
+        el('td', { class: 'acoes-cell' }, el('div', { class: 'btn-group-linha' },
+            el('button', { class: 'btn btn-salvar', textContent: 'Salvar', onclick: salvar }),
+            el('button', { class: 'btn btn-excluir', textContent: 'Cancelar', onclick: carregarLivros })
+        ))
+    );
+    // Troca a linha atual pela linha de edição.
+    [...tabelaCorpo.rows].find(r => r.cells[0].textContent === String(livro.id))?.replaceWith(linha);
 }
 
-function deletarLivro(id) {
-    if (confirm('Tem certeza que deseja excluir este livro?')) {
-        fetch(`${apiURL}/${id}`, {
-            method: 'DELETE'
-        })
-            .then(res => {
-                if (res.ok) {
-                    carregarLivros();
-                } else {
-                    alert('Erro ao excluir livro');
-                }
-            });
+async function deletarLivro(id) {
+    if (!confirm('Tem certeza que deseja excluir este livro?')) return;
+    try {
+        await requisitar(`${apiURL}/${id}`, { method: 'DELETE' });
+        carregarLivros();
+    } catch (erro) {
+        alert('Erro ao excluir livro: ' + erro.message);
     }
 }
 
 function limparFormulario() {
-    tituloInput.value = '';
-    autorInput.value = '';
-    anoInput.value = '';
-    editoraInput.value = '';
-    imagemUrlInput.value = '';
+    [tituloInput, autorInput, anoInput, editoraInput, imagemUrlInput].forEach(i => (i.value = ''));
 }
 
 document.addEventListener('DOMContentLoaded', carregarLivros);
